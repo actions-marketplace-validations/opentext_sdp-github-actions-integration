@@ -57,7 +57,7 @@ env:
     NODE_TLS_REJECT_UNAUTHORIZED: 0
 ```
 - Add a job for the product's integration and configure details about the runner.
-- Configure two secret variables named ALM_OCTANE_CLIENT_ID and ALM_OCTANE_CLIENT_SECRET with the credential values, inside your GitHub repository (more details about
+- Configure two secret variables named `SDP_CLIENT_ID` and `SDP_CLIENT_SECRET` with the credential values, inside your GitHub repository (more details about
 secret variables configuration [here](https://docs.github.com/en/actions/security-guides/encrypted-secrets)).
 - Set integration config params (the product's URL, Shared Space, Workspace, credentials) and repository (Token and URL).
 - Set `unitTestResultsGlobPattern` to match desired **JUnit** test results path or set `gherkinTestResultsGlobPattern` to match **Gherkin (BDD)** test results path ([see more](#injecting-gherkin-bdd-test-results)).
@@ -65,19 +65,19 @@ secret variables configuration [here](https://docs.github.com/en/actions/securit
 
 ```yaml
 jobs:
-  octane_integration_job:
+  sdp_integration_job:
     runs-on: <runner_tags>
-    name: OctaneIntegration#${{github.event.action}}#${{github.event.workflow_run.id}}
+    name: SDP-Integration#${{github.event.action}}#${{github.event.workflow_run.id}}
     steps:
-      - name: GitHub Actions ALM Octane Integration
-        uses: MicroFocus/alm-octane-github-actions-integration
+      - name: Publish to OpenText SDP
+        uses: opentext/sdp-github-actions-integration
         id: gitHubActionsIntegration
         with:
           octaneUrl: <alm_octane_URL>
           octaneSharedSpace: <alm_octane_shared_space>
           octaneWorkspace: <alm_octane_workspace>
-          octaneClientId: ${{secrets.ALM_OCTANE_CLIENT_ID}}
-          octaneClientSecret: ${{secrets.ALM_OCTANE_CLIENT_SECRET}}
+          octaneClientId: ${{secrets.SDP_CLIENT_ID}}
+          octaneClientSecret: ${{secrets.SDP_CLIENT_SECRET}}
           githubToken: ${{secrets.GITHUB_TOKEN}}
           serverBaseUrl: <github_repository_URL>
           pipelineNamePattern: '${workflow_name}'
@@ -104,14 +104,14 @@ on:
 env: 
     NODE_TLS_REJECT_UNAUTHORIZED: 0
 jobs:
-  octane_integration_job:
+  sdp_integration_job:
     # List of runner tags
     runs-on: [self-hosted]
-    name: OctaneIntegration#${{github.event.action}}#${{github.event.workflow_run.id}}
+    name: SDP-Integration#${{github.event.action}}#${{github.event.workflow_run.id}}
     steps:
-      - name: GitHub Actions ALM Octane Integration
+      - name: Publish to OpenText SDP
         # Reference to our public GitHub action
-        uses: MicroFocus/alm-octane-github-actions-integration
+        uses: opentext/sdp-github-actions-integration
         id: gitHubActionsIntegration
         # Config parameters for the integration
         with:
@@ -119,8 +119,8 @@ jobs:
           octaneUrl: 'http://myOctaneUrl.com'
           octaneSharedSpace: 1001
           octaneWorkspace: 1002
-          octaneClientId: ${{secrets.ALM_OCTANE_CLIENT_ID}}
-          octaneClientSecret: ${{secrets.ALM_OCTANE_CLIENT_SECRET}}
+          octaneClientId: ${{secrets.SDP_CLIENT_ID}}
+          octaneClientSecret: ${{secrets.SDP_CLIENT_SECRET}}
           # Automatically provided GitHub token
           githubToken: ${{secrets.GITHUB_TOKEN}}
           # The url that the CI Server in OpenText Core SDP will point to
@@ -267,7 +267,7 @@ jobs:
 
 ## 7. OpenText Functional Testing framework
 
-- To configure an automation workflow that runs tests using the OpenText Functional Testing *(formerly UFT One)* framework, follow the steps outlined in the following documentation: [Set Up OpenText Functional Testing](https://github.com/MicroFocus/alm-octane-github-actions-integration/blob/main/docs/set-up-opentext-functional-testing.md).
+- To configure an automation workflow that runs tests using the OpenText Functional Testing *(formerly UFT One)* framework, follow the steps outlined in the following documentation: [Set Up OpenText Functional Testing](https://github.com/opentext/sdp-github-actions-integration/blob/main/docs/set-up-opentext-functional-testing.md).
 
 ## 8. Limitations
 
@@ -285,7 +285,7 @@ jobs:
 
 ### v25.2.0
 
- - Added support for OpenText Functional Testing *(formerly UFT One)*. See how to configure the automation workflow [here](https://github.com/MicroFocus/alm-octane-github-actions-integration/blob/main/docs/set-up-opentext-functional-testing.md).
+ - Added support for OpenText Functional Testing *(formerly UFT One)*. See how to configure the automation workflow [here](https://github.com/opentext/sdp-github-actions-integration/blob/main/docs/set-up-opentext-functional-testing.md).
  - Saving the `artifact ID` and `external run ID` for each automated run in the product. The `Test Run Report URL` field in the workflow (pipeline) topology could include these values.
  - Enhanced multi-branch test runner support.
 

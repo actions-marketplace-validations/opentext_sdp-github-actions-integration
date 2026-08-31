@@ -21,17 +21,20 @@ This is a custom GitHub Action which facilitates communication between GitHub an
 - [6. Running Automated Tests](#6-running-automated-tests-from-the-product)
 - [7. OpenText Functional Testing](#7-opentext-functional-testing-framework)
 - [8. Limitations](#8-limitations)
+  - [8.1. Duplicate Workflow Run Protection](#81-duplicate-workflow-run-protection)
 - [9. Change log](#9-change-log)
+  - [v26.4.0](#v2640)
   - [v26.2.2](#v2622)
   - [v26.2.1](#v2621)
   - [v26.2.0](#v2620)
   - [v25.2.1](#v2521)
-  - [Older versions](#v2511)
+  - [Older versions](#v2520)
 
 ## 3. Requirements
 
 - At least one GitHub Actions runner allocated for running the integration.
-- The product version should be **16.1.200** or **higher** (certain features require a newer version - see documentation).
+- The product version should be **16.1.200** or **higher** for unidirectional integration (GitHub to product only). 
+  - **For bidirectional communication** (running pipelines or automated tests from the product, configuring external credentials for GitHub), the product version must be **25.1.8 or higher**. This is required because earlier versions have a limitation on credential password length (100 characters), which is insufficient for GitHub App private keys (~1500 characters).
 - API access to the product with **CI/CD Integration** or **DevOps Admin** roles.
 - The integration workflow requires the following minimum `permissions` to be declared (at the workflow or job level):
 
@@ -155,6 +158,19 @@ jobs:
         echo "execution_parameter:: $(echo '${{ toJson(github.event.inputs) }}' | jq -c .)"
 ```
 
+- To disable the **deployment lock mechanism** (which prevents duplicate workflow runs when a multi-job upstream workflow triggers the integration multiple times), set the `SDP_ENABLE_DEPLOYMENT_LOCK` environment variable to `false` in the integration job. By default, this feature is **enabled** to prevent duplicate CI events in the product:
+
+```yaml
+  sdp_integration_job:
+    runs-on: <runner_tags>
+    env:
+      SDP_ENABLE_DEPLOYMENT_LOCK: false  # Optional: set to false to disable duplicate run protection
+    steps:
+      - name: Publish to OpenText SDP
+        uses: opentext/sdp-github-actions-integration
+        ...
+```
+
 - Run the desired workflow(s) from Actions Tab. This will create a new CI Server and pipeline inside the product, reflecting the status of the executed workflow.
 
 ### 4.2. Pipeline name pattern
@@ -191,6 +207,9 @@ jobs:
   - `5` - error level
 
 ## 5. Credential Configuration into the product
+
+> [!IMPORTANT]
+> **Minimum version requirement**: This feature requires the product version **25.1.8 or higher**. Earlier versions cannot store the GitHub App private key due to password field length limitations (100 characters vs. ~1500 characters required). Without this configuration, the integration will be unidirectional (GitHub to product only).
 
 - To use certain features, the product needs to send requests to GitHub. This requires configuring a GitHub App credential and adding it to the application.
 
@@ -237,6 +256,8 @@ jobs:
 ## 6. Running Automated Tests from the product
 
 > [!IMPORTANT]
+> **Minimum version requirement**: This feature requires the product version **25.1.8 or higher**. This is needed to store the GitHub App private key credentials and establish bidirectional communication with GitHub Actions.
+>
 > Before configuring this feature, ensure the following prerequisites are met:
 > - **Log workflow execution parameters**: The automation workflow must include the [Log workflow execution parameters](#4-workflow-configuration) step that captures runtime inputs. This step is required for the product to correctly pass and handle test run parameters.
 > - **Credential configuration**: A GitHub App credential must be configured in the product as described in [Section 5 — Credential Configuration into the product](#5-credential-configuration-into-the-product). This allows the product to trigger workflows on GitHub.
@@ -300,7 +321,20 @@ jobs:
 - Commits from secondary branches will be injected by running the workflow on the desired branch.
 - The Octane GitHub Actions integration does not currently support direct execution or injection of NUnit test results. A workaround is possible by running NUnit tests to produce TRX results, converting the TRX files to JUnit format, publishing the JUnit results within GitHub Actions, and then completing the Octane test run so the results are injected. This allows NUnit test results to appear in Octane until native support is provided.
 
+## 8.1. Duplicate Workflow Run Protection
+
+The integration now includes a **deployment lock mechanism** that automatically prevents duplicate workflow runs when a multi-job upstream workflow triggers the integration multiple times (once for each job start/end). This feature is **enabled by default** and ensures that only one integration workflow processes each upstream workflow run, preventing duplicate CI events in the product.
+
+To disable this feature (if needed for compatibility or specific use cases), set the `SDP_ENABLE_DEPLOYMENT_LOCK` environment variable to `false` in your integration job configuration.
+
 ## 9. Change log
+
+### v26.4.0
+
+- Introduced a **deployment lock mechanism** to prevent duplicate workflow runs when multi-job upstream workflows trigger the integration multiple times.
+- The integration now uses GitHub Deployments as atomic locks to ensure only one workflow processes each upstream workflow run, preventing duplicate CI events in the product.
+- Added `SDP_ENABLE_DEPLOYMENT_LOCK` environment variable (enabled by default) to control this feature. Set to `false` to disable duplicate run protection if needed.
+- Added comprehensive documentation for the duplicate workflow run protection feature in the README.
 
 ### v26.2.2
 
